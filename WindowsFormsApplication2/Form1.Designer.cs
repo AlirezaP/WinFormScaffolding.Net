@@ -135,7 +135,7 @@
             // 
             // pictureBox3
             // 
-            this.pictureBox3.Image = global::WindowsFormsApplication2.Properties.Resources.SCAFFOLD;
+            this.pictureBox3.Image = global::WinFormScaffolding.Properties.Resources.SCAFFOLD;
             this.pictureBox3.Location = new System.Drawing.Point(-1, 257);
             this.pictureBox3.Name = "pictureBox3";
             this.pictureBox3.Size = new System.Drawing.Size(286, 83);
@@ -145,7 +145,7 @@
             // 
             // pictureBox2
             // 
-            this.pictureBox2.Image = global::WindowsFormsApplication2.Properties.Resources.t1;
+            this.pictureBox2.Image = global::WinFormScaffolding.Properties.Resources.t1;
             this.pictureBox2.Location = new System.Drawing.Point(-1, 372);
             this.pictureBox2.Name = "pictureBox2";
             this.pictureBox2.Size = new System.Drawing.Size(577, 71);
@@ -155,7 +155,7 @@
             // 
             // pictureBox1
             // 
-            this.pictureBox1.Image = global::WindowsFormsApplication2.Properties.Resources.t1;
+            this.pictureBox1.Image = global::WinFormScaffolding.Properties.Resources.t1;
             this.pictureBox1.Location = new System.Drawing.Point(-1, -3);
             this.pictureBox1.Name = "pictureBox1";
             this.pictureBox1.Size = new System.Drawing.Size(577, 45);

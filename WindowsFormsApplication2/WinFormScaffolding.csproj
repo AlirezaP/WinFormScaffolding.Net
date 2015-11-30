@@ -7,8 +7,8 @@
     <ProjectGuid>{1384B563-72F7-4E22-BAD2-0E2FC80DA62E}</ProjectGuid>
     <OutputType>WinExe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>WindowsFormsApplication2</RootNamespace>
-    <AssemblyName>WindowsFormsApplication2</AssemblyName>
+    <RootNamespace>WinFormScaffolding</RootNamespace>
+    <AssemblyName>WinFormScaffolding</AssemblyName>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>

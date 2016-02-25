@@ -44,6 +44,7 @@
             this.pictureBox2 = new System.Windows.Forms.PictureBox();
             this.pictureBox1 = new System.Windows.Forms.PictureBox();
             this.label4 = new System.Windows.Forms.Label();
+            this.chPluralize = new System.Windows.Forms.CheckBox();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox3)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox2)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
@@ -173,6 +174,16 @@
             this.label4.TabIndex = 12;
             this.label4.Text = "In The Name Of God";
             // 
+            // chPluralize
+            // 
+            this.chPluralize.AutoSize = true;
+            this.chPluralize.Location = new System.Drawing.Point(417, 245);
+            this.chPluralize.Name = "chPluralize";
+            this.chPluralize.Size = new System.Drawing.Size(84, 21);
+            this.chPluralize.TabIndex = 13;
+            this.chPluralize.Text = "Pluralize";
+            this.chPluralize.UseVisualStyleBackColor = true;
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
@@ -180,6 +191,7 @@
             this.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.BackColor = System.Drawing.SystemColors.ControlLightLight;
             this.ClientSize = new System.Drawing.Size(569, 439);
+            this.Controls.Add(this.chPluralize);
             this.Controls.Add(this.label4);
             this.Controls.Add(this.button3);
             this.Controls.Add(this.pictureBox3);
@@ -225,6 +237,7 @@
         private System.Windows.Forms.PictureBox pictureBox2;
         private System.Windows.Forms.PictureBox pictureBox3;
         private System.Windows.Forms.Label label4;
+        private System.Windows.Forms.CheckBox chPluralize;
     }
 }
 

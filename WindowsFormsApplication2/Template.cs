@@ -119,7 +119,7 @@ namespace ##namespace##
             {
 
                 var ass = forms[i].Ass.Select(p => p.Dependent).ToList();
-                var prop = forms[i].Props.Keys.Except(ass).ToList();
+                var prop = forms[i].Props.Select(p=>p.Name).Except(ass).ToList();
 
                 string temp = temp0;
 
@@ -381,7 +381,7 @@ namespace ##NameSpace##
                     tCode = "cmb" + t.Dependent + ".ValueMember = " + '"' + t.Principal + '"' + ';';
                     temp = temp.Replace("//##Code##", tCode + Environment.NewLine + "//##Code##");
 
-                    var tt = forms.Where(p => p.TableName == t.PrincipalTableName).FirstOrDefault().Props.Keys.ElementAt(1);
+                    var tt = forms.Where(p => p.TableName == t.PrincipalTableName).FirstOrDefault().Props.Select(p=>p.Name).ElementAt(1);
                     tCode = "cmb" + t.Dependent + ".DisplayMember = " + '"' + tt + '"' + ';';
                     temp = temp.Replace("//##Code##", tCode + Environment.NewLine + "//##Code##");
 
@@ -396,7 +396,7 @@ namespace ##NameSpace##
 
                 tCode = "grid" + forms[i].Fname + ".DataSource = "
                 + databaseObject.Replace("##EntitiyName##", "db")
-                .Replace("##ObjectName##", forms[i].TableName)
+                .Replace("##ObjectName##", forms[i].ModelName)
                 + temp2
                 + ".ToList();";
                 temp = temp.Replace("//##Code##", tCode + Environment.NewLine + "//##Code##");
@@ -406,29 +406,28 @@ namespace ##NameSpace##
                 //.......................................................................
 
                 //var ass = forms[i].Ass.Select(p => p.Dependent).ToList();
-                //var prop = forms[i].Props.Keys.Except(ass).ToList();
+                //var prop = forms[i].Props.Select(p=>p.Name).Except(ass).ToList();
 
                 string convert;
-                string prefix;
 
-                tCode = "  db.#TableName#.Add(new #ModelName# { #modelObject# })";
-                tCode = tCode.Replace("#TableName#", forms[i].TableName);
+                tCode = "  db.#ModelName#.Add(new #TableName# { #modelObject# })"; 
+                 tCode = tCode.Replace("#TableName#", forms[i].TableName);
                 tCode = tCode.Replace("#ModelName#", forms[i].ModelName);
                 for (int k = 0; k < forms[i].Props.Count; k++)
                 {
-                    convert = Convertor(forms[i].Props.Values.ElementAt(k));
+                    convert = Convertor(forms[i].Props.Select(p=>p.Type).ElementAt(k));
 
-                    var tKey = forms[i].Props.Keys.ElementAt(k);
+                    var tKey = forms[i].Props.Select(p=>p.Name).ElementAt(k);
                     var tAss = forms[i].Ass.Where(p => p.Dependent == tKey).FirstOrDefault();
 
-                    if (string.IsNullOrEmpty(convert))
+                    if (string.IsNullOrEmpty(convert) && forms[i].Props.Select(p => p.StoreGeneratedPattern).ElementAt(k)!= "Identity")
                     {
-                        tCode = tCode.Replace("#modelObject#", forms[i].Props.Keys.ElementAt(k) + " = " + (tAss == null ? "txt" : "cmb") + forms[i].Props.Keys.ElementAt(k) + (tAss == null ? ".Text" : ".SelectedValue") + ",#modelObject#");
+                        tCode = tCode.Replace("#modelObject#", forms[i].Props.Select(p=>p.Name).ElementAt(k) + " = " + (tAss == null ? "txt" : "cmb") + forms[i].Props.Select(p=>p.Name).ElementAt(k) + (tAss == null ? ".Text" : ".SelectedValue") + ",#modelObject#");
                     }
 
-                    if (!string.IsNullOrEmpty(convert))
-                        tCode = tCode.Replace("#modelObject#", forms[i].Props.Keys.ElementAt(k) + " = " + convert + (tAss == null ? "txt" : "cmb") + forms[i].Props.Keys.ElementAt(k) + (tAss == null ? ".Text" : ".SelectedValue") + ")" + ",#modelObject#");
-                    //tCode = tCode.Replace("#modelObject#", forms[i].Props.Keys.ElementAt(k) + " = " + convert + "txt" + forms[i].Props.Keys.ElementAt(k) + ".Text" + ")" + ",#modelObject#");
+                    if (!string.IsNullOrEmpty(convert) && forms[i].Props.Select(p => p.StoreGeneratedPattern).ElementAt(k) != "Identity")
+                        tCode = tCode.Replace("#modelObject#", forms[i].Props.Select(p=>p.Name).ElementAt(k) + " = " + convert + (tAss == null ? "txt" : "cmb") + forms[i].Props.Select(p=>p.Name).ElementAt(k) + (tAss == null ? ".Text" : ".SelectedValue") + ")" + ",#modelObject#");
+                    //tCode = tCode.Replace("#modelObject#", forms[i].Props.Select(p=>p.Name).ElementAt(k) + " = " + convert + "txt" + forms[i].Props.Select(p=>p.Name).ElementAt(k) + ".Text" + ")" + ",#modelObject#");
                 }
                 tCode = tCode.Replace(",#modelObject#", "");
 
@@ -439,26 +438,26 @@ namespace ##NameSpace##
                 //.......................BtnUpdate.........................................
                 //.......................................................................
 
-                tCode = @"  var obj = new #ModelName#{ #modelObject# };
+                tCode = @"  var obj = new #TableName#{ #modelObject# };
                             db.Entry(obj).State = EntityState.Modified;
                             db.SaveChanges()";
 
-                tCode = tCode.Replace("#ModelName#", forms[i].ModelName);
+                tCode = tCode.Replace("#TableName#", forms[i].TableName);
 
                 for (int k = 0; k < forms[i].Props.Count; k++)
                 {
-                    //tCode = tCode.Replace("#modelObject#", forms[i].Props.Keys.ElementAt(k) + " = txt" + forms[i].Props.Keys.ElementAt(k) + ".Text" + ",#modelObject#");
+                    //tCode = tCode.Replace("#modelObject#", forms[i].Props.Select(p=>p.Name).ElementAt(k) + " = txt" + forms[i].Props.Select(p=>p.Name).ElementAt(k) + ".Text" + ",#modelObject#");
 
-                    convert = Convertor(forms[i].Props.Values.ElementAt(k));
+                    convert = Convertor(forms[i].Props.Select(p=>p.Type).ElementAt(k));
 
-                    var tKey = forms[i].Props.Keys.ElementAt(k);
+                    var tKey = forms[i].Props.Select(p=>p.Name).ElementAt(k);
                     var tAss = forms[i].Ass.Where(p => p.Dependent == tKey).FirstOrDefault();
 
                     if (string.IsNullOrEmpty(convert))
-                        tCode = tCode.Replace("#modelObject#", forms[i].Props.Keys.ElementAt(k) + " = " + (tAss == null ? "txt" : "cmb") + forms[i].Props.Keys.ElementAt(k) + (tAss == null ? ".Text" : ".SelectedValue") + ",#modelObject#");
+                        tCode = tCode.Replace("#modelObject#", forms[i].Props.Select(p=>p.Name).ElementAt(k) + " = " + (tAss == null ? "txt" : "cmb") + forms[i].Props.Select(p=>p.Name).ElementAt(k) + (tAss == null ? ".Text" : ".SelectedValue") + ",#modelObject#");
 
                     if (!string.IsNullOrEmpty(convert))
-                        tCode = tCode.Replace("#modelObject#", forms[i].Props.Keys.ElementAt(k) + " = " + convert + (tAss == null ? "txt" : "cmb")  + forms[i].Props.Keys.ElementAt(k) + (tAss == null ? ".Text" : ".SelectedValue") + ")" + ",#modelObject#");
+                        tCode = tCode.Replace("#modelObject#", forms[i].Props.Select(p=>p.Name).ElementAt(k) + " = " + convert + (tAss == null ? "txt" : "cmb")  + forms[i].Props.Select(p=>p.Name).ElementAt(k) + (tAss == null ? ".Text" : ".SelectedValue") + ")" + ",#modelObject#");
 
                 }
 
@@ -493,6 +492,9 @@ namespace ##NameSpace##
 
             if (vType.Contains("date"))
                 res = "DateTime.Parse(";
+
+            if (vType.Contains("bit"))
+                res = "bool.Parse(";
 
             return res;
         }

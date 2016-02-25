@@ -40,6 +40,8 @@ namespace WinFormScaffolding
 
         public string Type { get { return @"Type="".*"""; } }
 
+        public string StoreGeneratedPattern { get { return @"StoreGeneratedPattern="".*"""; } }
+
         public System.Text.RegularExpressions.MatchCollection GetMatches(string data, string pattern, System.Text.RegularExpressions.RegexOptions? option=null)
         {
             System.Text.RegularExpressions.Regex regex;

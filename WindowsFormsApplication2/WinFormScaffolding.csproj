@@ -41,11 +41,11 @@
       <HintPath>..\packages\EntityFramework.6.1.3\lib\net45\EntityFramework.SqlServer.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="EPPlus, Version=4.0.3.0, Culture=neutral, PublicKeyToken=ea159fdaa78159a1, processorArchitecture=MSIL">
+    <Reference Include="EPPlus, Version=4.0.4.0, Culture=neutral, PublicKeyToken=ea159fdaa78159a1, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\My FrameWork\MessageParser.NET\MessageParser.NET\bin\Debug\EPPlus.dll</HintPath>
     </Reference>
-    <Reference Include="MessageParser.Net, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="MessageParser.Net, Version=1.0.3.2, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\My FrameWork\MessageParser.NET\MessageParser.NET\bin\Debug\MessageParser.Net.dll</HintPath>
     </Reference>

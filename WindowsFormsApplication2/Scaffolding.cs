@@ -15,11 +15,14 @@ namespace WinFormScaffolding
             public string NameSpace { get; set; }
             public string Fname { get; set; }
             public string TableName { get; set; }
-            public Dictionary<string, string> Props { get; set; }
+            //public Dictionary<string, string> Props { get; set; }
+            public List<Property> Props { get; set; }
             public AssociationStruct[] Ass { get; set; }
             public string Code { get; set; }
             public string Design { get; set; }
             public string ModelName { get; set; }
+            public int MyProperty { get; set; }
+            public Maps Map { get; set; }
         }
 
         public class AssociationStruct
@@ -30,6 +33,23 @@ namespace WinFormScaffolding
             public string PrincipalWithoutRoleTableName { get; set; }
             public string DependentTableName { get; set; }
             public string DependentWithoutRolTableName { get; set; }
+        }
+
+        public class Property
+        {
+            public string Name { get; set; }
+            public string Type { get; set; }
+            public int? MaxLength { get; set; }
+            public bool FixedLength { get; set; }
+            public bool Unicode { get; set; }
+            public bool Nullable { get; set; }
+            public string StoreGeneratedPattern { get; set; }
+        }
+
+        public class Maps
+        {
+            public string Name { get; set; }
+            public string StoreEntitySet { get; set; }
         }
 
         public string OutPutAddress { get; set; }
@@ -54,43 +74,33 @@ namespace WinFormScaffolding
             string data = sr.ReadToEnd();
             sr.Close();
 
-            string ConceptualSection = regexPatterns.GetMatch(data, regexPatterns.ConceptualModels, RegexOptions.Singleline).Value;
+            MessageParser.NET.Tools.XmlParser xml = new MessageParser.NET.Tools.XmlParser();
+
+            string ConceptualSection = xml.GetSubTreeByParent(data, "edmx:StorageModels")[0].InnerXml;
             var dic = GetsRoles(ConceptualSection);
 
-            var matchesEntityType = regexPatterns.GetMatches(data, regexPatterns.EntityType);
+            var matchesEntityType = xml.GetSubTreeByParent(ConceptualSection, "EntityType");
 
-            string[] entityTypeList = Regex.Split(data, "</EntityType>");
-            string[] associationList = Regex.Split(data, "</Association>");
-
-            Regex association = new Regex(regexPatterns.Association);
-
+            var entityTypeList = xml.GetSubTreeByParent(ConceptualSection, "EntityType");
+            var associationList = xml.GetSubTreeByParent(ConceptualSection, "Association");
 
             Queue<struc> result = new Queue<struc>();
             Queue<AssociationStruct> associationResult = new Queue<AssociationStruct>();
 
             for (int k = 0; k < associationList.Length; k++)
             {
-                matchesEntityType = regexPatterns.GetMatches(associationList[k], regexPatterns.Association);
-                associationResult.Enqueue(GetAssociation(associationList[k]));
+                associationResult.Enqueue(GetAssociation(associationList[k].OuterXml));
             }
-
 
             for (int k = 0; k < entityTypeList.Length; k++)
             {
-                matchesEntityType = regexPatterns.GetMatches(entityTypeList[k], regexPatterns.EntityType);
-                for (int i = 0; i < matchesEntityType.Count; i++)
                 {
                     struc te = new struc();
-                    te.Fname = Filter(matchesEntityType[i].Value);
+                    te.Fname = Filter(xml.GetAttributeValue(entityTypeList[k].OuterXml, "EntityType", "Name"));
 
-                    var p2 = regexPatterns.GetMatches(matchesEntityType[i].Value, regexPatterns.GetValue);
+                    te.Props = GetProperty(entityTypeList[k].OuterXml);
 
-                    for (int j = 0; j < p2.Count; j++)
-                    {
-                        te.Fname = Filter(p2[i].Value);
-                    }
-
-                    te.Props = GetProperty(entityTypeList[k]);
+                    te.Map = GetMapForTable(xml.GetSubTreeByParent(data, "edmx:Mappings")[0].InnerXml,te.Fname);
 
                     if (result.Where(p => p.Fname == te.Fname).FirstOrDefault() != null)
                         continue;
@@ -98,10 +108,10 @@ namespace WinFormScaffolding
                     if (!string.IsNullOrEmpty(NameSpace))
                         te.NameSpace = NameSpace;
 
-                    te.ModelName = te.Fname;
-                    te.TableName = te.Fname;
-                    te.Fname = "frm" + te.Fname;
-       
+                    te.ModelName = te.Map.Name;
+                    te.TableName = te.Map.StoreEntitySet;
+                    te.Fname = "frm" + te.Map.Name;
+
                     result.Enqueue(te);
                 }
             }
@@ -285,28 +295,97 @@ namespace WinFormScaffolding
             return res.ToArray();
         }
 
-        private Dictionary<string, string> GetProperty(string data)
+
+        // private Dictionary<string, string> GetProperty(string data)
+        private List<Property> GetProperty(string data)
         {
-            var matches = regexPatterns.GetMatches(data, regexPatterns.Property);
+            List<Property> property = new List<Property>();
 
-            Dictionary<string, string> property = new Dictionary<string, string>();
+            MessageParser.NET.Tools.XmlParser xml = new MessageParser.NET.Tools.XmlParser();
+            var temp = xml.GetSubTreeByParent(data, "Property");
 
-            for (int i = 0; i < matches.Count; i++)
+            for (int i = 0; i < temp.Length; i++)
             {
-                //listBox1.Items.Add(matches[i].Value);
+                var Name = xml.GetAttributeValue(temp[i].OuterXml, "Property", "Name");
 
-                property.Add(SubTree(matches[i].Value, regexPatterns.Name), SubTree(matches[i].Value, regexPatterns.Type));
+                var Type = xml.GetAttributeValue(temp[i].OuterXml, "Property", "Type");
+
+                var FixedLength = (xml.GetAttributeValue(temp[i].OuterXml, "Property", "FixedLength"));
+
+                var MaxLength = (xml.GetAttributeValue(temp[i].OuterXml, "Property", "MaxLength"));
+
+                var Nullable = (xml.GetAttributeValue(temp[i].OuterXml, "Property", "Nullable"));
+
+                var Unicode = (xml.GetAttributeValue(temp[i].OuterXml, "Property", "Unicode"));
+
+                var StoreGeneratedPattern = xml.GetAttributeValue(temp[i].OuterXml, "Property", "annotation:StoreGeneratedPattern");
+
+                property.Add(
+                    new Property
+                    {
+                        Name = (!string.IsNullOrEmpty(Name) ? Name : "UnKnow")
+                    ,
+                        Type = (!string.IsNullOrEmpty(Type) ? Type : "UnKnow")
+                    ,
+                        FixedLength = (!string.IsNullOrEmpty(FixedLength) ? bool.Parse(FixedLength) : false)
+                    ,
+                        MaxLength = (!string.IsNullOrEmpty(MaxLength) ? int.Parse(MaxLength) : -1)
+                    ,
+                        Nullable = (!string.IsNullOrEmpty(Nullable) ? bool.Parse(Nullable) : true)
+                    ,
+                        Unicode = (!string.IsNullOrEmpty(Unicode) ? bool.Parse(Unicode) : true)
+                    ,
+                        StoreGeneratedPattern = xml.GetAttributeValue(temp[i].OuterXml, "Property", "StoreGeneratedPattern")
+                    });
             }
 
             return property;
         }
 
+        private Maps GetMapForTable(string mappingsSection,string tabelName)
+        {
+            List<Maps> map = new List<Maps>();
+
+            MessageParser.NET.Tools.XmlParser xml = new MessageParser.NET.Tools.XmlParser();
+
+            var temp = xml.GetSubTreeByParent(mappingsSection, "EntitySetMapping");
+
+            for (int i = 0; i < temp.Length; i++)
+            {
+                var temp2 = xml.GetSubTreeByParent(mappingsSection, "MappingFragment");
+
+                var Name = xml.GetAttributeValue(temp[i].OuterXml, "EntitySetMapping", "Name");
+
+                var StoreEntitySet = xml.GetAttributeValue(temp[i].OuterXml, "MappingFragment", "StoreEntitySet");
+
+                if (StoreEntitySet == tabelName)
+                    return new Maps { StoreEntitySet = StoreEntitySet, Name = Name };
+
+   
+
+                //map.Add(
+                //    new Maps
+                //    {
+                //        Name = (!string.IsNullOrEmpty(Name) ? Name : "UnKnow")
+                //    ,
+                //        StoreEntitySet = (!string.IsNullOrEmpty(StoreEntitySet) ? StoreEntitySet : "UnKnow")
+                //    });
+            }
+
+            return null;
+        }
+
         private string SubTree(string data, string pattern)
         {
             var temp = regexPatterns.GetMatches(data, pattern, RegexOptions.Singleline);
-            var res = regexPatterns.GetMatches(temp[0].Value, regexPatterns.GetValue);
+            if (temp.Count > 0)
+            {
+                var res = regexPatterns.GetMatches(temp[0].Value, regexPatterns.GetValue);
 
-            return Filter(res[0].Value);
+                return Filter(res[0].Value);
+            }
+
+            return "";
         }
 
         private string Filter(string input)

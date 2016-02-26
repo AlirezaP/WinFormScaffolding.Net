@@ -13,7 +13,7 @@ namespace WinFormScaffolding
         int y = 0;
         static int formx = 1326;
 
-        enum ContoleType { Label, Text, Combo, Grid }
+        enum ContoleType { Label, Text, Combo, Grid, CheckBox }
 
         string addCtr = "this.Controls.Add(this.";
         string defLblCtr = "private System.Windows.Forms.Label ";
@@ -21,12 +21,14 @@ namespace WinFormScaffolding
         string defCmbCtr = "private System.Windows.Forms.ComboBox ";
         string defGridCtr = "private System.Windows.Forms.DataGridView ";
         string defBtnCtr = "private System.Windows.Forms.Button ";
+        string defChCtr = "private System.Windows.Forms.CheckBox ";
 
         string addNewLblCtr = "this.#val# = new System.Windows.Forms.Label();";
         string addNewTxtCtr = "this.#val# = new System.Windows.Forms.TextBox();";
         string addNewCmbCtr = "this.#val# = new System.Windows.Forms.ComboBox();";
         string addNewGridCtr = "this.#val# = new System.Windows.Forms.DataGridView();";
         string addNewBtnCtr = "this.#val# = new System.Windows.Forms.Button();";
+        string addNewChCtr = "this.#val# = new System.Windows.Forms.CheckBox();";
 
 
         string addLblOptions = @"     
@@ -68,6 +70,11 @@ namespace WinFormScaffolding
             this.#nameVal#.UseVisualStyleBackColor = true
         ";
 
+        string addChOptions = @"
+            this.#nameVal#.Location = new System.Drawing.Point(#x#, #y#);
+            this.#nameVal#.Name = ""#nameVal#"";
+            this.#nameVal#.Size = new System.Drawing.Size(98, 21);
+            this.#nameVal#.TabIndex = 0";
 
 
         string temp0 = @"
@@ -119,7 +126,9 @@ namespace ##namespace##
             {
 
                 var ass = forms[i].Ass.Select(p => p.Dependent).ToList();
-                var prop = forms[i].Props.Select(p=>p.Name).Except(ass).ToList();
+                var bit = forms[i].Props.Where(p => p.Type == "bit").Select(p => p.Name).Except(ass).ToList();
+                var prop = forms[i].Props.Select(p => p.Name).Except(ass).Except(bit).ToList();
+
 
                 string temp = temp0;
 
@@ -128,6 +137,7 @@ namespace ##namespace##
                 //GenerateControl
                 temp = GenerateControl(temp, ass, ContoleType.Combo);
                 temp = GenerateControl(temp, prop, ContoleType.Text);
+                temp = GenerateControl(temp, bit, ContoleType.CheckBox);
                 //Create GridView For Each Form
                 temp = CreateGridView(temp, forms[i]);
                 //set FormSize
@@ -187,6 +197,25 @@ namespace ##namespace##
                     temp = temp.Replace("//##DefComponents##", defCmbCtr + "cmb" + text + ";" + Environment.NewLine + "//##DefComponents##");
 
                     temp = temp.Replace("//##Components##", addCtr + "cmb" + text + ");" + Environment.NewLine + "//##Components##");
+                }
+                //.....................................................................................
+
+                //Define CheckBox
+                //.....................................................................................
+                if (ctrType == ContoleType.CheckBox)
+                {
+                    temp = temp.Replace("//##Components0##", addNewChCtr.Replace("#val#", "ch" + text) + Environment.NewLine + "//##Components0##");
+
+                    temp = temp.Replace("//##Components0##", addChOptions.Replace("#nameVal#", "ch" + text)
+                   .Replace("#x#", x.ToString())
+                   .Replace("#y#", y.ToString())
+                   + ";" + Environment.NewLine + "//##Components0##");
+
+                    UpdateSize(text.Length + 100, ref x, ref y);
+
+                    temp = temp.Replace("//##DefComponents##", defChCtr + "ch" + text + ";" + Environment.NewLine + "//##DefComponents##");
+
+                    temp = temp.Replace("//##Components##", addCtr + "ch" + text + ");" + Environment.NewLine + "//##Components##");
                 }
                 //.....................................................................................
 
@@ -381,7 +410,7 @@ namespace ##NameSpace##
                     tCode = "cmb" + t.Dependent + ".ValueMember = " + '"' + t.Principal + '"' + ';';
                     temp = temp.Replace("//##Code##", tCode + Environment.NewLine + "//##Code##");
 
-                    var tt = forms.Where(p => p.TableName == t.PrincipalTableName).FirstOrDefault().Props.Select(p=>p.Name).ElementAt(1);
+                    var tt = forms.Where(p => p.TableName == t.PrincipalTableName).FirstOrDefault().Props.Select(p => p.Name).ElementAt(1);
                     tCode = "cmb" + t.Dependent + ".DisplayMember = " + '"' + tt + '"' + ';';
                     temp = temp.Replace("//##Code##", tCode + Environment.NewLine + "//##Code##");
 
@@ -410,24 +439,30 @@ namespace ##NameSpace##
 
                 string convert;
 
-                tCode = "  db.#ModelName#.Add(new #TableName# { #modelObject# })"; 
-                 tCode = tCode.Replace("#TableName#", forms[i].TableName);
+                tCode = @"db.#ModelName#.Add(new #TableName# { #modelObject# });
+db.SaveChanges();";
+                tCode = tCode.Replace("#TableName#", forms[i].TableName);
                 tCode = tCode.Replace("#ModelName#", forms[i].ModelName);
                 for (int k = 0; k < forms[i].Props.Count; k++)
                 {
-                    convert = Convertor(forms[i].Props.Select(p=>p.Type).ElementAt(k));
+                    convert = Convertor(forms[i].Props.Select(p => p.Type).ElementAt(k));
 
-                    var tKey = forms[i].Props.Select(p=>p.Name).ElementAt(k);
+                    string prefix = GetPrefix(forms[i].Props.Select(p => p.Type).ElementAt(k));
+                    string postfix = GetPostfix(forms[i].Props.Select(p => p.Type).ElementAt(k));
+
+                    var tKey = forms[i].Props.Select(p => p.Name).ElementAt(k);
                     var tAss = forms[i].Ass.Where(p => p.Dependent == tKey).FirstOrDefault();
 
-                    if (string.IsNullOrEmpty(convert) && forms[i].Props.Select(p => p.StoreGeneratedPattern).ElementAt(k)!= "Identity")
+                    if (string.IsNullOrEmpty(convert) && forms[i].Props.Select(p => p.StoreGeneratedPattern).ElementAt(k) != "Identity")
                     {
-                        tCode = tCode.Replace("#modelObject#", forms[i].Props.Select(p=>p.Name).ElementAt(k) + " = " + (tAss == null ? "txt" : "cmb") + forms[i].Props.Select(p=>p.Name).ElementAt(k) + (tAss == null ? ".Text" : ".SelectedValue") + ",#modelObject#");
+                        tCode = tCode.Replace("#modelObject#", forms[i].Props.Select(p => p.Name).ElementAt(k) + " = " + (tAss == null ? prefix : "cmb") + forms[i].Props.Select(p => p.Name).ElementAt(k) + (tAss == null ? postfix : ".SelectedValue") + ",#modelObject#");
                     }
 
                     if (!string.IsNullOrEmpty(convert) && forms[i].Props.Select(p => p.StoreGeneratedPattern).ElementAt(k) != "Identity")
-                        tCode = tCode.Replace("#modelObject#", forms[i].Props.Select(p=>p.Name).ElementAt(k) + " = " + convert + (tAss == null ? "txt" : "cmb") + forms[i].Props.Select(p=>p.Name).ElementAt(k) + (tAss == null ? ".Text" : ".SelectedValue") + ")" + ",#modelObject#");
-                    //tCode = tCode.Replace("#modelObject#", forms[i].Props.Select(p=>p.Name).ElementAt(k) + " = " + convert + "txt" + forms[i].Props.Select(p=>p.Name).ElementAt(k) + ".Text" + ")" + ",#modelObject#");
+                    {
+                        tCode = tCode.Replace("#modelObject#", forms[i].Props.Select(p => p.Name).ElementAt(k) + " = " + convert + (tAss == null ? prefix : "cmb") + forms[i].Props.Select(p => p.Name).ElementAt(k) + (tAss == null ? postfix : ".SelectedValue") + ")" + ",#modelObject#");
+                        //tCode = tCode.Replace("#modelObject#", forms[i].Props.Select(p=>p.Name).ElementAt(k) + " = " + convert + "txt" + forms[i].Props.Select(p=>p.Name).ElementAt(k) + ".Text" + ")" + ",#modelObject#");
+                    }
                 }
                 tCode = tCode.Replace(",#modelObject#", "");
 
@@ -448,16 +483,18 @@ namespace ##NameSpace##
                 {
                     //tCode = tCode.Replace("#modelObject#", forms[i].Props.Select(p=>p.Name).ElementAt(k) + " = txt" + forms[i].Props.Select(p=>p.Name).ElementAt(k) + ".Text" + ",#modelObject#");
 
-                    convert = Convertor(forms[i].Props.Select(p=>p.Type).ElementAt(k));
+                    convert = Convertor(forms[i].Props.Select(p => p.Type).ElementAt(k));
+                    string prefix = GetPrefix(forms[i].Props.Select(p => p.Type).ElementAt(k));
+                    string postfix = GetPostfix(forms[i].Props.Select(p => p.Type).ElementAt(k));
 
-                    var tKey = forms[i].Props.Select(p=>p.Name).ElementAt(k);
+                    var tKey = forms[i].Props.Select(p => p.Name).ElementAt(k);
                     var tAss = forms[i].Ass.Where(p => p.Dependent == tKey).FirstOrDefault();
 
                     if (string.IsNullOrEmpty(convert))
-                        tCode = tCode.Replace("#modelObject#", forms[i].Props.Select(p=>p.Name).ElementAt(k) + " = " + (tAss == null ? "txt" : "cmb") + forms[i].Props.Select(p=>p.Name).ElementAt(k) + (tAss == null ? ".Text" : ".SelectedValue") + ",#modelObject#");
+                        tCode = tCode.Replace("#modelObject#", forms[i].Props.Select(p => p.Name).ElementAt(k) + " = " + (tAss == null ? prefix : "cmb") + forms[i].Props.Select(p => p.Name).ElementAt(k) + (tAss == null ? postfix : ".SelectedValue") + ",#modelObject#");
 
                     if (!string.IsNullOrEmpty(convert))
-                        tCode = tCode.Replace("#modelObject#", forms[i].Props.Select(p=>p.Name).ElementAt(k) + " = " + convert + (tAss == null ? "txt" : "cmb")  + forms[i].Props.Select(p=>p.Name).ElementAt(k) + (tAss == null ? ".Text" : ".SelectedValue") + ")" + ",#modelObject#");
+                        tCode = tCode.Replace("#modelObject#", forms[i].Props.Select(p => p.Name).ElementAt(k) + " = " + convert + (tAss == null ? prefix : "cmb") + forms[i].Props.Select(p => p.Name).ElementAt(k) + (tAss == null ? postfix : ".SelectedValue") + ")" + ",#modelObject#");
 
                 }
 
@@ -467,7 +504,7 @@ namespace ##NameSpace##
 
                 //.......................................................................
 
-                forms[i].Code = temp;
+                forms[i].Code = temp.Replace("//##PublicCode##", "").Replace("//##Code##", "").Replace("//##BtnDeleteCode##","");
                 res[i] = temp;
             }
 
@@ -493,8 +530,72 @@ namespace ##NameSpace##
             if (vType.Contains("date"))
                 res = "DateTime.Parse(";
 
-            if (vType.Contains("bit"))
-                res = "bool.Parse(";
+            //if (vType.Contains("bit"))
+            //    res = "bool.Parse(";
+
+            return res;
+        }
+
+        private string GetPrefix(string vType)
+        {
+            string res = null;
+
+            switch (vType)
+            {
+                case ("nvarchar"):
+                    res = "txt"; break;
+
+                case ("varchar"):
+                    res = "txt"; break;
+
+                case ("int"):
+                    res = "txt"; break;
+
+                case ("float"):
+                    res = "txt"; break;
+
+                case ("date"):
+                    res = "txt"; break;
+
+                case ("bit"):
+                    res = "ch"; break;
+
+                default:
+                    res = "txt";
+                    break;
+            }
+
+            return res;
+        }
+
+        private string GetPostfix(string vType)
+        {
+            string res = null;
+
+            switch (vType)
+            {
+                case ("nvarchar"):
+                    res = ".Text"; break;
+
+                case ("varchar"):
+                    res = ".Text"; break;
+
+                case ("int"):
+                    res = ".Text"; break;
+
+                case ("float"):
+                    res = ".Text"; break;
+
+                case ("date"):
+                    res = ".Text"; break;
+
+                case ("bit"):
+                    res = ".Checked"; break;
+
+                default:
+                    res = ".Text";
+                    break;
+            }
 
             return res;
         }
